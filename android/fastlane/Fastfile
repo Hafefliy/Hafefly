@@ -1,0 +1,80 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+update_fastlane
+
+# def delete_temp_keychain (name)
+#   delete_keychain
+#     name: name
+#   ) if File. exist? File. expand _path("~/Library/Keychains/#(name}-db")
+# end
+
+# def create_temp_keychain(name, password)
+#   create_keychain(
+#     name: name,
+#     password: password,
+#     unlock: false,
+#     timeout: false
+#   )
+# end
+
+# def ensure_temp_keychain (name, password)
+#   delete temp keychain(name)
+#   create_temp_keychain(name, password)
+# end
+
+
+default_platform(:android)
+
+platform :android do
+  desc "Runs all the tests"
+  lane :test do
+    gradle(task: "test")
+  end
+
+  desc "Build a Flutter apk"
+  lane :build_android do |options|
+    # sh "./flutter_build.sh --clean" TODO: uncomment this line when publishing to play store;
+    sh "./flutter_build.sh --apk"
+  end
+
+  desc "Submit a new Beta Build to Crashlytics Beta"
+  lane :beta do
+    gradle(task: "clean assembleRelease")
+    crashlytics
+  
+    # sh "your_script.sh"
+    # You can also use other beta testing services here
+  end
+
+  desc "Submit a new Beta Build to AppCenter"
+  lane :deploy_android do |options|
+  if File.exist?(File.dirname(__FILE__) + "./../build/app/outputs/apk/release/app-arm64-v8a-release.apk")
+    appcenter_upload(
+      api_token: "00c02b5bfcaa1cbcd554e4a3f5e8d2534365df2f", # Your secret api token from app center
+      owner_name: "raynex", # Your username on AppCenter
+      app_name: "hafefly", # Your AppCenter name
+      apk: "..build/app/outputs/apk/release/app-arm64-v8a-release.apk",
+    )
+
+#    upload_to_play_store(
+#      track: options[:production] ? 'production' : options[:internal] ? 'internal' : options[:alpha] ? 'alpha' : 'beta',
+#      aab: '../build/app/outputs/bundle/release/app.aab',
+#      skip_upload_images: true,
+#      skip_upload_screenshots: true,
+#    ) TODO: uncomment this line when publishing to play store;
+    else
+      UI.message('Unable to find apk')
+    end
+  end
+end
